@@ -72,7 +72,8 @@ namespace IdentityServer3.StarterKit
 
             var certificate = Certificate.Get();
             app.MapCore(certificate)
-                .MapManager();
+                .MapManager()
+                .MapAdmin();
         }
 
         public class TraceLogProvider : ILogProvider

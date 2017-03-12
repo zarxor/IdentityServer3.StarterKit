@@ -56,6 +56,8 @@ namespace IdentityServer3.StarterKit.Config
                             new Claim(Core.Constants.ClaimTypes.WebSite, "https://www.johanbostrom.se/"));
                         userManager.AddClaim(user.Id,
                             new Claim(Core.Constants.ClaimTypes.Role, IdentityManager.Constants.AdminRoleName));
+                        userManager.AddClaim(user.Id,
+                            new Claim(Core.Constants.ClaimTypes.Role, IdentityAdmin.Constants.AdminRoleName));
                     }
 
                     db.SaveChanges();

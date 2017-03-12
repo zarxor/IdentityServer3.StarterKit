@@ -3,6 +3,8 @@
 // </copyright>
 
 using System.Security.Cryptography.X509Certificates;
+using IdentityAdmin.Configuration;
+using IdentityAdmin.Core;
 using IdentityManager;
 using IdentityManager.Configuration;
 using IdentityServer3.Core.Configuration;
@@ -37,7 +39,8 @@ namespace IdentityServer3.StarterKit.Extensions
 
                 factory.Register(new Core.Configuration.Registration<UserManager>());
                 factory.Register(new Core.Configuration.Registration<UserStore>());
-                factory.Register(new Core.Configuration.Registration<Context>(resolver => new Context(Constants.ConnectionStringName)));
+                factory.Register(
+                    new Core.Configuration.Registration<Context>(resolver => new Context(Constants.ConnectionStringName)));
 
                 factory.UserService = new Core.Configuration.Registration<IUserService, UserService>();
 
@@ -71,12 +74,15 @@ namespace IdentityServer3.StarterKit.Extensions
             {
                 var factory = new IdentityManagerServiceFactory();
 
-                factory.Register(new IdentityManager.Configuration.Registration<Context>(resolver => new Context(Constants.ConnectionStringName)));
+                factory.Register(
+                    new IdentityManager.Configuration.Registration<Context>(
+                        resolver => new Context(Constants.ConnectionStringName)));
                 factory.Register(new IdentityManager.Configuration.Registration<UserStore>());
                 factory.Register(new IdentityManager.Configuration.Registration<RoleStore>());
                 factory.Register(new IdentityManager.Configuration.Registration<UserManager>());
                 factory.Register(new IdentityManager.Configuration.Registration<RoleManager>());
-                factory.IdentityManagerService = new IdentityManager.Configuration.Registration<IIdentityManagerService, IdentityManagerService>();
+                factory.IdentityManagerService =
+                    new IdentityManager.Configuration.Registration<IIdentityManagerService, IdentityManagerService>();
 
                 mgrApp.UseIdentityManager(new IdentityManagerOptions
                 {
@@ -92,5 +98,29 @@ namespace IdentityServer3.StarterKit.Extensions
             return app;
         }
 
+        public static IAppBuilder MapAdmin(this IAppBuilder app)
+        {
+            app.Map(Constants.Routes.IdAdm, admApp =>
+            {
+                var factory = new IdentityAdminServiceFactory
+                {
+                    IdentityAdminService =
+                        new IdentityAdmin.Configuration.Registration<IIdentityAdminService>(
+                            r => new IdentityAdminService(Constants.ConnectionStringName))
+                };
+
+                admApp.UseIdentityAdmin(new IdentityAdminOptions
+                {
+                    Factory = factory,
+                    AdminSecurityConfiguration = new AdminHostSecurityConfiguration
+                    {
+                        HostAuthenticationType = "Cookies",
+                        AdditionalSignOutType = "oidc"
+                    }
+                });
+            });
+
+            return app;
+        }
     }
 }
