@@ -3,6 +3,8 @@
 // </copyright>
 
 using System.Security.Cryptography.X509Certificates;
+using IdentityManager;
+using IdentityManager.Configuration;
 using IdentityServer3.Core.Configuration;
 using IdentityServer3.Core.Services;
 using IdentityServer3.EntityFramework;
@@ -33,11 +35,11 @@ namespace IdentityServer3.StarterKit.Extensions
                 factory.RegisterClientStore(efConfig);
                 factory.RegisterScopeStore(efConfig);
 
-                factory.Register(new Registration<UserManager>());
-                factory.Register(new Registration<UserStore>());
-                factory.Register(new Registration<Context>(resolver => new Context(Constants.ConnectionStringName)));
+                factory.Register(new Core.Configuration.Registration<UserManager>());
+                factory.Register(new Core.Configuration.Registration<UserStore>());
+                factory.Register(new Core.Configuration.Registration<Context>(resolver => new Context(Constants.ConnectionStringName)));
 
-                factory.UserService = new Registration<IUserService, UserService>();
+                factory.UserService = new Core.Configuration.Registration<IUserService, UserService>();
 
                 DefaultSetup.Configure(efConfig);
 
@@ -62,5 +64,33 @@ namespace IdentityServer3.StarterKit.Extensions
 
             return app;
         }
+
+        public static IAppBuilder MapManager(this IAppBuilder app)
+        {
+            app.Map(Constants.Routes.IdMgr, mgrApp =>
+            {
+                var factory = new IdentityManagerServiceFactory();
+
+                factory.Register(new IdentityManager.Configuration.Registration<Context>(resolver => new Context(Constants.ConnectionStringName)));
+                factory.Register(new IdentityManager.Configuration.Registration<UserStore>());
+                factory.Register(new IdentityManager.Configuration.Registration<RoleStore>());
+                factory.Register(new IdentityManager.Configuration.Registration<UserManager>());
+                factory.Register(new IdentityManager.Configuration.Registration<RoleManager>());
+                factory.IdentityManagerService = new IdentityManager.Configuration.Registration<IIdentityManagerService, IdentityManagerService>();
+
+                mgrApp.UseIdentityManager(new IdentityManagerOptions
+                {
+                    Factory = factory,
+                    SecurityConfiguration = new HostSecurityConfiguration
+                    {
+                        HostAuthenticationType = "Cookies",
+                        AdditionalSignOutType = "oidc"
+                    }
+                });
+            });
+
+            return app;
+        }
+
     }
 }

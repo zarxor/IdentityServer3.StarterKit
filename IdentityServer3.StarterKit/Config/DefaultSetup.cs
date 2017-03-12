@@ -29,11 +29,8 @@ namespace IdentityServer3.StarterKit.Config
                         db.Scopes.Add(e);
                     }
 
-                    foreach (var s in StandardScopes.AllAlwaysInclude)
-                    {
-                        var e = s.ToEntity();
-                        db.Scopes.Add(e);
-                    }
+                    db.Scopes.Add(StandardScopes.Roles.ToEntity());
+                    db.Scopes.Add(StandardScopes.OfflineAccess.ToEntity());
 
                     db.SaveChanges();
                 }
@@ -57,6 +54,8 @@ namespace IdentityServer3.StarterKit.Config
                         userManager.Create(user, defaultUserPassword);
                         userManager.AddClaim(user.Id,
                             new Claim(Core.Constants.ClaimTypes.WebSite, "https://www.johanbostrom.se/"));
+                        userManager.AddClaim(user.Id,
+                            new Claim(Core.Constants.ClaimTypes.Role, IdentityManager.Constants.AdminRoleName));
                     }
 
                     db.SaveChanges();
@@ -67,15 +66,12 @@ namespace IdentityServer3.StarterKit.Config
             {
                 if (!db.Clients.Any())
                 {
-                    var defaultHybridClient = new Client
+                    var defaultImplicitClient = new Client
                     {
-                        ClientName = "Default Hybrid Client",
-                        ClientId = "default.hybrid",
-                        Flow = Flows.Hybrid,
-                        ClientSecrets = new List<Secret>
-                        {
-                            new Secret("default.hybrid.password".Sha256())
-                        },
+                        ClientName = "Default Implicit Flow Client",
+                        ClientId = "default.implicit",
+                        Flow = Flows.Implicit,
+                        Enabled = true,
                         AllowedScopes = new List<string>
                         {
                             Core.Constants.StandardScopes.OpenId,
@@ -84,20 +80,25 @@ namespace IdentityServer3.StarterKit.Config
                             Core.Constants.StandardScopes.Roles,
                             Core.Constants.StandardScopes.Address,
                             Core.Constants.StandardScopes.Phone,
-                            Core.Constants.StandardScopes.OfflineAccess
+                            Core.Constants.StandardScopes.OfflineAccess,
+                            IdentityManager.Constants.IdMgrScope
                         },
                         ClientUri = "https://localhost:44300/",
                         RequireConsent = false,
-                        AccessTokenType = AccessTokenType.Reference,
-                        RedirectUris = new List<string>(),
+                        RedirectUris = new List<string>
+                        {
+                            "https://localhost:44300"
+                        },
                         PostLogoutRedirectUris = new List<string>
                         {
-                            "https://localhost:44300/"
+                            "https://localhost:44300" + Constants.Routes.IdMgr,
+                            "https://localhost:44300" + Constants.Routes.IdAdm
                         },
                         LogoutSessionRequired = true
                     };
+                    
+                    db.Clients.Add(defaultImplicitClient.ToEntity());
 
-                    db.Clients.Add(defaultHybridClient.ToEntity());
                     db.SaveChanges();
                 }
             }
